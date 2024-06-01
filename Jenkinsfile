@@ -54,6 +54,7 @@ pipeline {
                                 echo "cleanup of existing container before running a new one"
                                 docker stop backend-myapp || true
                                 docker rm backend-myapp || true
+                                sudo fuser -k 8080/tcp || true
                                 docker container run -dt --name backend-myapp -p 8080:8080 secretrulerkings/backend-app:${packageJSONVersion}
 
                             """
