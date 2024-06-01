@@ -40,7 +40,7 @@ pipeline {
                 echo "Now we build images and push to Docker Hub"
                 dir('lms/api') {
                     script {
-                        def packageJSON = readJSON file: 'package.json'
+                        def packageJSON = readJSON file: 'webapp/package.json'
                         def packageJSONVersion = packageJSON.version
                         withDockerRegistry([credentialsId: 'dockerhub-cred', url: 'https://index.docker.io/v1/']) {
                             sh """
