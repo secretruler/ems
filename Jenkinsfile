@@ -1,6 +1,15 @@
 pipeline {
     agent any
     stages {
+
+        stage('Cleaning up docker') {
+            steps {
+                echo "Cleaning up docker"
+                sh 'docker rm $(docker ps -a -q) && docker rmi -f $(docker images -a -q) && docker system prune -f'
+                echo 'cleaning up completed'
+            }
+        }
+
         stage('Runing a Database container') {
             steps {
                 echo "building a database container"
