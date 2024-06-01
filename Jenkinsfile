@@ -31,7 +31,7 @@ pipeline {
                 script {
                     echo "Checking if package.json exists in the expected directory..."
                     sh 'ls -lR' // List all files and directories to check the structure
-                    sh 'cat lms/api/package.json' // Display the content of package.json to verify its existence
+                    sh 'cat lms/webapp/package.json' // Display the content of package.json to verify its existence
                 }
             }
         }
