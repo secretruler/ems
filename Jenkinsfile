@@ -30,7 +30,7 @@ pipeline {
             steps {
                 script {
                     echo 'Checking if package.json exists in the expected directory...'
-                    dir('ems/api') {  // Change to the webapp directory
+                    dir('api') {  // Change to the webapp directory
                         sh 'ls -l package.json'
                     }
                 }
@@ -39,7 +39,7 @@ pipeline {
         stage('Build and Push Docker Images') {
             steps {
                 echo "Now we build images and push to Docker Hub"
-                dir('ems/api') {
+                dir('api') {
                     script {
                         def packageJSON = readJSON file: 'package.json'
                         def packageJSONVersion = packageJSON.version
