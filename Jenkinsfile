@@ -5,6 +5,7 @@ pipeline {
             steps {
                 echo "building a database container"
                 sh 'docker container run -dt --name lms-db -e POSTGRES_PASSWORD=password postgres'
+                echo 'building database container completed'
                 //
             }
         }
