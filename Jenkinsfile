@@ -26,7 +26,7 @@ pipeline {
                 echo 'building database container completed'
             }
         }
-        stage('Check for package.json') {
+        stage('Check for backend package.json') {
             steps {
                 script {
                     echo 'Checking if package.json exists in the expected directory...'
@@ -36,9 +36,9 @@ pipeline {
                 }
             }
         }
-        stage('Build and Push Docker Images') {
+        stage('Build and Push Backend Docker Images') {
             steps {
-                echo "Now we build images and push to Docker Hub"
+                echo "Now we build backend images and push to Docker Hub"
                 dir('api') {
                     script {
                         def packageJSON = readJSON file: 'package.json'
@@ -51,16 +51,42 @@ pipeline {
                                 echo "DATABASE_URL=postgresql://postgres:password@lms-db:5432/postgres" >> .env
                                 docker build -t secretrulerkings/backend-app:${packageJSONVersion} .
                                 docker push secretrulerkings/backend-app:${packageJSONVersion}
+                                docker container run -dt --name backend-myapp -p 8080:8080 secretrulerkings/backend-app:${packageJSONVersion}
                             """
                         }
                     }
                 }
             }
         }
-        stage('Deploy') {
+        stage('check for frontend package json') {
             steps {
-                echo "deploy stage"
+                script {
+                    echo 'Checking if package.json exists in the frontend directory...'
+                    dir('webapp') {  // Change to the webapp directory
+                        sh 'ls -l package.json'
+                    }
+                }
             }
         }
+        stage('Build and Push Docker Images') {
+            steps {
+                echo "Now we build frontend images and push to Docker Hub"
+                dir('webapp') {
+                    script {
+                        def packageJSON = readJSON file: 'package.json'
+                        def packageJSONVersion = packageJSON.version
+                        withDockerRegistry([credentialsId: 'dockerhub-cred', url: 'https://index.docker.io/v1/']) {
+                            sh """
+                                rm -f .env
+                                VITE_API_URL=http://backend-myapp:8080/api > .env
+                                docker build -t secretrulerkings/frontend-app:${packageJSONVersion} .
+                                docker push secretrulerkings/frontend-app:${packageJSONVersion}
+                            """
+                        }
+                    }
+                }
+            }
+        }
+
     }
 }
