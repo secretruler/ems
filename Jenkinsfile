@@ -30,7 +30,7 @@ pipeline {
             steps {
                 script {
                     echo 'Checking if package.json exists in the expected directory...'
-                    dir('api') {  // Change to the webapp directory
+                    dir('ems/api') {  // Change to the webapp directory
                         sh 'ls -l package.json'
                     }
                 }
@@ -41,7 +41,7 @@ pipeline {
                 echo "Now we build images and push to Docker Hub"
                 dir('ems/api') {
                     script {
-                        def packageJSON = readJSON file: 'api/package.json'
+                        def packageJSON = readJSON file: 'package.json'
                         def packageJSONVersion = packageJSON.version
                         withDockerRegistry([credentialsId: 'dockerhub-cred', url: 'https://index.docker.io/v1/']) {
                             sh """
