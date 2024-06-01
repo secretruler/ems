@@ -29,9 +29,10 @@ pipeline {
         stage('Check for package.json') {
             steps {
                 script {
-                    echo "Checking if package.json exists in the expected directory..."
-                    sh 'ls -lR' // List all files and directories to check the structure
-                    sh 'cat ems/webapp/package.json' // Display the content of package.json to verify its existence
+                    echo 'Checking if package.json exists in the expected directory...'
+                    dir('api') {  // Change to the webapp directory
+                        sh 'ls -l package.json'
+                    }
                 }
             }
         }
@@ -40,7 +41,7 @@ pipeline {
                 echo "Now we build images and push to Docker Hub"
                 dir('ems/api') {
                     script {
-                        def packageJSON = readJSON file: 'webapp/package.json'
+                        def packageJSON = readJSON file: 'api/package.json'
                         def packageJSONVersion = packageJSON.version
                         withDockerRegistry([credentialsId: 'dockerhub-cred', url: 'https://index.docker.io/v1/']) {
                             sh """
