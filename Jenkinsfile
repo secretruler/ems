@@ -16,21 +16,27 @@ pipeline {
                     // Clean up any other Docker resources
                     sh 'docker system prune -f || true'
                 }
-                echo 'cleaning up completed'
+                echo 'Cleaning up completed'
             }
         }
-        stage('Running a Database container') {
+
+        stage('Clean up Kubernetes Resources') {
             steps {
-                echo "building a database container"
-                sh 'docker container run -dt --name lms-db -e POSTGRES_PASSWORD=password postgres'
-                echo 'building database container completed'
+                echo "Cleaning up Kubernetes resources"
+                script {
+                    sh """
+                        kubectl delete all --all -n akhilkings || true
+                    """
+                }
+                echo 'Kubernetes clean up completed'
             }
         }
+        
         stage('Check for backend package.json') {
             steps {
                 script {
-                    echo 'Checking if package.json exists in the expected directory...'
-                    dir('api') {  // Change to the webapp directory
+                    echo 'Checking if package.json exists in the api directory...'
+                    dir('api') {
                         sh 'ls -l package.json'
                     }
                 }
@@ -45,29 +51,50 @@ pipeline {
                         def packageJSONVersion = packageJSON.version
                         withDockerRegistry([credentialsId: 'dockerhub-cred', url: 'https://index.docker.io/v1/']) {
                             sh """
-                                rm -f .env
-                                echo "MODE=production" > .env
-                                echo "PORT=8080" >> .env
-                                echo "DATABASE_URL=postgresql://postgres:password@lms-db:5432/postgres" >> .env
                                 docker build -t secretrulerkings/backend-app:${packageJSONVersion} .
                                 docker push secretrulerkings/backend-app:${packageJSONVersion}
                             """
                         }
+
                     }
                 }
             }
         }
-        stage('check for frontend package json') {
+
+        stage('Deploy Backend to Kubernetes') {
+            steps {
+                echo "Deploying backend to Kubernetes"
+                dir('api') {
+                    script {
+                        def packageJSON = readJSON file: 'package.json'
+                        def packageJSONVersion = packageJSON.version
+                        sh """
+                            sed -i 's/\${packageJSONVersion}/${packageJSONVersion}/g' be-deployment.yml
+                            kubectl apply -f akhilkings-namespace.yml
+                            kubectl apply -f pg-secret.yml -n akhilkings
+                            kubectl apply -f pg-deployment.yml -n akhilkings
+                            kubectl apply -f pg-service.yml -n akhilkings
+                            kubectl apply -f be-configmap.yml -n akhilkings
+                            kubectl apply -f be-deployment.yml -n akhilkings
+                            kubectl apply -f be-service.yml -n akhilkings
+                            kubectl get pods -n akhilkings
+                            kubectl get services -n akhilkings 
+                        """
+                    }
+                }
+            }
+        }
+        stage('Check for frontend package.json') {
             steps {
                 script {
-                    echo 'Checking if package.json exists in the frontend directory...'
-                    dir('webapp') {  // Change to the webapp directory
+                    echo 'Checking if package.json exists in the webapp directory...'
+                    dir('webapp') {
                         sh 'ls -l package.json'
                     }
                 }
             }
         }
-        stage('Build and Push Docker Images') {
+        stage('Build and Push Frontend Docker Images') {
             steps {
                 echo "Now we build frontend images and push to Docker Hub"
                 dir('webapp') {
@@ -76,8 +103,6 @@ pipeline {
                         def packageJSONVersion = packageJSON.version
                         withDockerRegistry([credentialsId: 'dockerhub-cred', url: 'https://index.docker.io/v1/']) {
                             sh """
-                                rm -f .env
-                                VITE_API_URL=http://backend-myapp:8080/api > .env
                                 docker build -t secretrulerkings/frontend-app:${packageJSONVersion} .
                                 docker push secretrulerkings/frontend-app:${packageJSONVersion}
                             """
@@ -86,6 +111,23 @@ pipeline {
                 }
             }
         }
-
+        stage('Deploy Frontend to Kubernetes') {
+            steps {
+                echo "Deploying frontend to Kubernetes"
+                dir('webapp') {
+                    script {
+                        def packageJSON = readJSON file: 'package.json'
+                        def packageJSONVersion = packageJSON.version
+                        sh """
+                            sed -i 's/\${packageJSONVersion}/${packageJSONVersion}/g' fe-deployment.yml
+                            kubectl apply -f fe-deployment.yml -n akhilkings
+                            kubectl apply -f fe-service.yml -n akhilkings
+                            kubectl get pods -n akhilkings
+                            kubectl get services -n akhilkings
+                        """
+                    }
+                }
+            }
+        }
     }
 }
