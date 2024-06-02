@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: frontend-container
-          image: secretrulerkings/frontend-app:${PACKAGE_JSON_VERSION}
+          image: secretrulerkings/frontend-app:${packageJSONVersion}
           imagePullPolicy: Always
           ports:
             - containerPort: 80
