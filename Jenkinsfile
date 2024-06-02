@@ -73,7 +73,6 @@ pipeline {
                         withKubeCredentials(kubectlCredentials: [[credentialsId: 'kubectl-config', clusterName: 'PRODUCTION_CLUSTER', namespace: 'akhilkings']]) {
                             sh """
                                 sed -i 's/\${packageJSONVersion}/${packageJSONVersion}/g' be-deployment.yml
-                                kubectl apply -f akhilkings-namespace.yml
                                 kubectl apply -f pg-secret.yml -n akhilkings
                                 kubectl apply -f pg-deployment.yml -n akhilkings
                                 kubectl apply -f pg-service.yml -n akhilkings
