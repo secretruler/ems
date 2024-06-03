@@ -33,7 +33,12 @@ pipeline {
                 echo "Cleaning up Kubernetes resources"
                 script {
                     withKubeCredentials(kubectlCredentials: [[credentialsId: 'SECRET_TOKEN', clusterName: 'production']]) {
-                        sh 'kubectl delete all --all --namespace=default || true'
+                        sh 'kubectl delete pods --all --namespace=default || true'
+                        sh 'kubectl delete services --all --namespace=default || true'
+                        sh 'kubectl delete replicasets --all --namespace=default || true'
+                        sh 'kubectl delete deployments --all --namespace=default || true'
+                        sh 'kubectl delete configmaps --all --namespace=default || true'
+                        sh 'kubectl delete secrets --all --namespace=default || true'
                     }
                 }
                 echo 'Kubernetes clean up completed'
