@@ -1,16 +1,12 @@
 pipeline {
-    agent any
-    
-    options {
-        buildDiscarder(logRotator(numToKeepStr: '1')) // Keep only the latest build
-    }
+    agent any 
     
     stages {
         stage('Integrate Remote k8s with Jenkins') {
             steps {
                 withKubeCredentials(kubectlCredentials: [[caCertificate: '', clusterName: 'production', contextName: '', credentialsId: 'SECRET_TOKEN', namespace: 'default', serverUrl: 'https://71DE4B8751047A8016EFEC2435B92D4F.gr7.eu-north-1.eks.amazonaws.com']]) {
-                    sh 'curl -LO "https://storage.googleapis.com/kubernetes-release/release/v1.20.5/bin/linux/amd64/kubectl"'
-                    sh 'chmod u+x ./kubectl'
+                    sh 'curl -LO "https://storage.googleapis.com/kubernetes-release/release/v1.20.5/bin/linux/amd64/kubectl"'  
+                    sh 'chmod u+x ./kubectl'  
                     sh './kubectl get nodes'
                 }
             }
@@ -36,7 +32,7 @@ pipeline {
             steps {
                 echo "Cleaning up Kubernetes resources"
                 script {
-                    withKubeCredentials(kubectlCredentials: [[credentialsId: 'kubectl-config', clusterName: 'production']]) {
+                    withKubeCredentials(kubectlCredentials: [[credentialsId: 'SECRET_TOKEN', clusterName: 'production']]) {
                         sh 'kubectl delete all --all --namespace=default || true'
                     }
                 }
@@ -80,7 +76,7 @@ pipeline {
                     script {
                         def packageJSON = readJSON file: 'package.json'
                         def packageJSONVersion = packageJSON.version
-                        withKubeCredentials(kubectlCredentials: [[credentialsId: 'kubectl-config', clusterName: 'production']]) {
+                        withKubeCredentials(kubectlCredentials: [[credentialsId: 'SECRET_TOKEN', clusterName: 'production']]) {
                             sh """
                                 sed -i 's/\${packageJSONVersion}/${packageJSONVersion}/g' be-deployment.yml
                                 kubectl apply -f pg-secret.yml
@@ -134,7 +130,7 @@ pipeline {
                     script {
                         def packageJSON = readJSON file: 'package.json'
                         def packageJSONVersion = packageJSON.version
-                        withKubeCredentials(kubectlCredentials: [[credentialsId: 'kubectl-config', clusterName: 'production']]) {
+                        withKubeCredentials(kubectlCredentials: [[credentialsId: 'SECRET_TOKEN', clusterName: 'production']]) {
                             sh """
                                 sed -i 's/\${packageJSONVersion}/${packageJSONVersion}/g' fe-deployment.yml
                                 kubectl apply -f fe-deployment.yml
