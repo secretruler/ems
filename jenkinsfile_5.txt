@@ -1,9 +1,5 @@
 pipeline {
-    agent any
-
-    environment {
-        KUBECONFIG = '/var/run/secrets/kubernetes.io/serviceaccount/.kube/config'
-    }
+    agent any 
     
     stages {
         stage('Integrate Remote k8s with Jenkins') {
@@ -12,19 +8,20 @@ pipeline {
                     sh 'curl -LO "https://storage.googleapis.com/kubernetes-release/release/v1.20.5/bin/linux/amd64/kubectl"'  
                     sh 'chmod u+x ./kubectl'  
                     sh './kubectl get nodes'
-                    sh './kubectl config get-contexts'
-                    sh './kubectl config current-context'
                 }
             }
         }
         
-        stage('Cleaning up Docker') {
+        stage('Cleaning up docker') {
             steps {
-                echo "Cleaning up Docker"
+                echo "Cleaning up docker"
                 script {
+                    // Stop and remove all running containers
                     sh 'docker stop $(docker ps -a -q) || true'
                     sh 'docker rm $(docker ps -a -q) || true'
+                    // Remove all Docker images
                     sh 'docker rmi -f $(docker images -a -q) || true'
+                    // Clean up any other Docker resources
                     sh 'docker system prune -f || true'
                 }
                 echo 'Cleaning up completed'
@@ -150,13 +147,6 @@ pipeline {
                     }
                 }
             }
-        }
-    }
-    
-    post {
-        always {
-            echo "Cleaning up any remaining resources"
-            // Add any cleanup steps if needed
         }
     }
 }
