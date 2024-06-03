@@ -6,16 +6,6 @@ pipeline {
     }
     
     stages {
-        stage('Integrate Remote k8s with Jenkins') {
-            steps {
-                withKubeCredentials(kubectlCredentials: [[caCertificate: '', clusterName: 'production', contextName: '', credentialsId: 'SECRET_TOKEN', namespace: 'default', serverUrl: 'https://71DE4B8751047A8016EFEC2435B92D4F.gr7.eu-north-1.eks.amazonaws.com']]) {
-                    sh 'curl -LO "https://storage.googleapis.com/kubernetes-release/release/v1.20.5/bin/linux/amd64/kubectl"'
-                    sh 'chmod u+x ./kubectl'
-                    sh './kubectl get nodes'
-                }
-            }
-        }
-        
         stage('Cleaning up docker') {
             steps {
                 echo "Cleaning up docker"
@@ -36,8 +26,8 @@ pipeline {
             steps {
                 echo "Cleaning up Kubernetes resources"
                 script {
-                    withKubeCredentials(kubectlCredentials: [[credentialsId: 'kubectl-config', clusterName: 'production']]) {
-                        sh 'kubectl delete all --all --namespace=default || true'
+                    withKubeCredentials(kubectlCredentials: [[credentialsId: 'kubectl-config', clusterName: 'PRODUCTION_CLUSTER', namespace: 'akhilkings']]) {
+                        sh 'kubectl delete all --all -n akhilkings || true'
                     }
                 }
                 echo 'Kubernetes clean up completed'
@@ -80,17 +70,17 @@ pipeline {
                     script {
                         def packageJSON = readJSON file: 'package.json'
                         def packageJSONVersion = packageJSON.version
-                        withKubeCredentials(kubectlCredentials: [[credentialsId: 'kubectl-config', clusterName: 'production']]) {
+                        withKubeCredentials(kubectlCredentials: [[credentialsId: 'kubectl-config', clusterName: 'PRODUCTION_CLUSTER', namespace: 'akhilkings']]) {
                             sh """
                                 sed -i 's/\${packageJSONVersion}/${packageJSONVersion}/g' be-deployment.yml
-                                kubectl apply -f pg-secret.yml
-                                kubectl apply -f pg-deployment.yml
-                                kubectl apply -f pg-service.yml
-                                kubectl apply -f be-configmap.yml
-                                kubectl apply -f be-deployment.yml
-                                kubectl apply -f be-service.yml
-                                kubectl get pods
-                                kubectl get services
+                                kubectl apply -f pg-secret.yml -n akhilkings
+                                kubectl apply -f pg-deployment.yml -n akhilkings
+                                kubectl apply -f pg-service.yml -n akhilkings
+                                kubectl apply -f be-configmap.yml -n akhilkings
+                                kubectl apply -f be-deployment.yml -n akhilkings
+                                kubectl apply -f be-service.yml -n akhilkings
+                                kubectl get pods -n akhilkings
+                                kubectl get services -n akhilkings 
                             """
                         }
                     }
@@ -134,13 +124,13 @@ pipeline {
                     script {
                         def packageJSON = readJSON file: 'package.json'
                         def packageJSONVersion = packageJSON.version
-                        withKubeCredentials(kubectlCredentials: [[credentialsId: 'kubectl-config', clusterName: 'production']]) {
+                        withKubeCredentials(kubectlCredentials: [[credentialsId: 'kubectl-config', clusterName: 'PRODUCTION_CLUSTER', namespace: 'akhilkings']]) {
                             sh """
                                 sed -i 's/\${packageJSONVersion}/${packageJSONVersion}/g' fe-deployment.yml
-                                kubectl apply -f fe-deployment.yml
-                                kubectl apply -f fe-service.yml
-                                kubectl get pods
-                                kubectl get services
+                                kubectl apply -f fe-deployment.yml -n akhilkings
+                                kubectl apply -f fe-service.yml -n akhilkings
+                                kubectl get pods -n akhilkings
+                                kubectl get services -n akhilkings
                             """
                         }
                     }

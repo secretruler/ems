@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: ems-fe
-  namespace: akhilkings
+
 spec:
   replicas: 2
   selector:
