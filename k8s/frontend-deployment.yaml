@@ -1,24 +1,25 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: ems-fe
-
+  name: frontend-deployment
 spec:
   replicas: 2
   selector:
     matchLabels:
-      app: ems-fe
+      component: frontend
   template:
     metadata:
       labels:
-        app: ems-fe
+        component: frontend
     spec:
       containers:
-        - name: frontend-container
-          image: secretrulerkings/frontend-app:${packageJSONVersion}
+        - name: frontend
+          image: secretrulerkings/frontend-app
           imagePullPolicy: Always
           ports:
             - containerPort: 80
           env:
+            - name: MODE
+              value: production
             - name: VITE_API_URL
-              value: "http://ems-be-service:3000"
+              value: api-load-balancer-service

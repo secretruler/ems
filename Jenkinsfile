@@ -8,9 +8,9 @@ pipeline {
         buildDiscarder(logRotator(numToKeepStr: '1')) // Keep only the latest build
     }
     stages {
-        stage('Cleaning up docker') {
+        stage('Cleaning up Docker') {
             steps {
-                echo "Cleaning up docker"
+                echo "Cleaning up Docker"
                 script {
                     // Stop and remove all running containers
                     sh 'docker stop $(docker ps -a -q) || true'
@@ -90,61 +90,55 @@ pipeline {
 
         stage('DB Deployment') {
             steps {
-                sh 'cd api && kubectl apply -f postgres-deployment.yaml'
+                dir('k8s') {
+                    sh 'kubectl apply -f postgres-deployment.yaml'
+                }
             }
         }
 
         stage('DB Cluster IP Service') {
             steps {
-                sh 'cd api && kubectl apply -f postgres-cluster-ip-service.yaml'
-            }
-        }
-
-        stage('DB Persistent Volume') {
-            steps {
-                sh 'cd api && kubectl apply -f database-persistent-volume.yaml'
+                dir('k8s') {
+                    sh 'kubectl apply -f postgres-cluster-ip-service.yaml'
+                }
             }
         }
 
         stage('Backend Deployment') {
             steps {
-                dir('api') {
-                    script {
-                        def packageJSON = readJSON file: 'package.json'
-                        def packageJSONVersion = packageJSON.version
-                        sh """
-                            sed -i 's#image: secretrulerkings/backend-app:.*#image: secretrulerkings/backend-app:${packageJSONVersion}#' api-deployment.yaml
-                            kubectl apply -f api-deployment.yaml
-                        """
-                    }
+                dir('k8s') {
+                    sh 'kubectl apply -f api-deployment.yaml'
                 }
             }
         }
 
         stage('Backend Load Balancer Service') {
             steps {
-                sh 'cd api && kubectl apply -f api-load-balancer-service.yaml'
+                dir('k8s') {
+                    sh 'kubectl apply -f api-load-balancer-service.yaml'
+                }
             }
         }
 
         stage('Frontend Deployment') {
             steps {
-                dir('webapp') {
-                    script {
-                        def packageJSON = readJSON file: 'package.json'
-                        def packageJSONVersion = packageJSON.version
-                        sh """
-                            sed -i 's#image: secretrulerkings/frontend-app:.*#image: secretrulerkings/frontend-app:${packageJSONVersion}#' frontend-deployment.yaml
-                            kubectl apply -f frontend-deployment.yaml
-                        """
-                    }
+                dir('k8s') {
+                    sh 'kubectl apply -f frontend-deployment.yaml'
                 }
             }
         }
 
         stage('Frontend Load Balancer Service') {
             steps {
-                sh 'cd webapp && kubectl apply -f frontend-load-balancer-service.yaml'
+                dir('k8s') {
+                    sh 'kubectl apply -f frontend-load-balancer-service.yaml'
+                }
+            }
+        }
+
+        stage('Final Message') {
+            steps {
+                echo "You have successfully completed deploying your LMS app!"
             }
         }
     }
