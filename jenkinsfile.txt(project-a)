@@ -1,0 +1,87 @@
+pipeline {
+    agent {
+        node {
+            label 'slave'
+        }
+    }
+    options {
+        buildDiscarder(logRotator(numToKeepStr: '1')) // Keep only the latest build
+    }
+    stages {
+        stage('Cleaning up Docker') {
+            steps {
+                echo "Cleaning up Docker"
+                script {
+                    // Stop and remove all running containers
+                    sh 'docker stop $(docker ps -a -q) || true'
+                    sh 'docker rm $(docker ps -a -q) || true'
+                    // Remove all Docker images
+                    sh 'docker rmi -f $(docker images -a -q) || true'
+                    // Clean up any other Docker resources
+                    sh 'docker system prune -f || true'
+                }
+                echo 'Cleaning up completed'
+            }
+        }
+
+        stage('Check for backend package.json') {
+            steps {
+                script {
+                    echo 'Checking if package.json exists in the expected directory...'
+                    dir('api') {
+                        sh 'ls -l package.json'
+                    }
+                }
+            }
+        }
+
+        stage('Build and Push Backend Docker Images') {
+            steps {
+                echo "Now we build backend images and push to Docker Hub"
+                dir('api') {
+                    script {
+                        withDockerRegistry([credentialsId: 'dockerhub-cred', url: 'https://index.docker.io/v1/']) {
+                            sh """
+                                docker build -t secretrulerkings/backend-app:latest .
+                                docker push secretrulerkings/backend-app:latest
+                            """
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('Check for frontend package.json') {
+            steps {
+                script {
+                    echo 'Checking if package.json exists in the frontend directory...'
+                    dir('webapp') {
+                        sh 'ls -l package.json'
+                    }
+                }
+            }
+        }
+
+        stage('Build and Push Frontend Docker Images') {
+            steps {
+                echo "Now we build frontend images and push to Docker Hub"
+                dir('webapp') {
+                    script {
+                        withDockerRegistry([credentialsId: 'dockerhub-cred', url: 'https://index.docker.io/v1/']) {
+                            sh """
+                                docker build -t secretrulerkings/frontend-app:latest .
+                                docker push secretrulerkings/frontend-app:latest
+                            """
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('Final Message') {
+            steps {
+                echo "You have successfully completed building and pushing your Docker images!"
+            }
+        }
+    }
+}
