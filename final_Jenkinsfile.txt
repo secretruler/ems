@@ -53,23 +53,6 @@ pipeline {
             }
         }
 
-        stage('Deploy Backend to EKS') {
-            steps {
-                echo 'Configuring EKS Cluster...'
-                sh 'aws eks --region ap-south-1 update-kubeconfig --name PRODUCTION_CLUSTER'
-                
-                dir('api') {
-                    echo 'Deploying backend database...'
-                    sh 'kubectl apply -f postgres-deployment.yaml'
-                    sh 'kubectl apply -f postgres-cluster-ip-service.yaml'
-                    
-                    echo 'Deploying backend application...'
-                    sh 'kubectl apply -f api-deployment.yaml'
-                    sh 'kubectl apply -f api-load-balancer-service.yaml'
-                }
-            }
-        }
-
         stage('Check for frontend package.json') {
             steps {
                 script {
@@ -99,14 +82,55 @@ pipeline {
             }
         }
 
-        stage('Deploy Frontend to EKS') {
+        stage('Configure EKS Cluster') {
             steps {
-                echo 'Configuring EKS Cluster...'
                 sh 'aws eks --region ap-south-1 update-kubeconfig --name PRODUCTION_CLUSTER'
-                
-                dir('webapp') {
-                    echo 'Deploying frontend application...'
+            }
+        }
+
+        stage('DB Deployment') {
+            steps {
+                dir('k8s') {
+                    sh 'kubectl apply -f postgres-deployment.yaml'
+                }
+            }
+        }
+
+        stage('DB Cluster IP Service') {
+            steps {
+                dir('k8s') {
+                    sh 'kubectl apply -f postgres-cluster-ip-service.yaml'
+                }
+            }
+        }
+
+        stage('Backend Deployment') {
+            steps {
+                dir('k8s') {
+                    sh 'kubectl apply -f api-deployment.yaml'
+                }
+            }
+        }
+
+        stage('Backend Load Balancer Service') {
+            steps {
+                dir('k8s') {
+                    sh 'kubectl apply -f api-load-balancer-service.yaml'
+                }
+            }
+        }
+
+        stage('Frontend Deployment') {
+            steps {
+                dir('k8s') {
                     sh 'kubectl apply -f frontend-deployment.yaml'
+                }
+            }
+        }
+
+        stage('Frontend Load Balancer Service') {
+            steps {
+                dir('k8s') {
                     sh 'kubectl apply -f frontend-load-balancer-service.yaml'
                 }
             }
