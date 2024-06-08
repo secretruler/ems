@@ -84,7 +84,7 @@ pipeline {
 
         stage('Configure EKS Cluster') {
             steps {
-                sh 'aws eks --region eu-west-1 update-kubeconfig --name lms-cluster'
+                sh 'aws eks --region ap-south-1 update-kubeconfig --name PRODUCTION_CLUSTER'
             }
         }
 
