@@ -40,12 +40,10 @@ pipeline {
                 echo "Now we build backend images and push to Docker Hub"
                 dir('api') {
                     script {
-                        def packageJSON = readJSON file: 'package.json'
-                        def packageJSONVersion = packageJSON.version
                         withDockerRegistry([credentialsId: 'dockerhub-cred', url: 'https://index.docker.io/v1/']) {
                             sh """
-                                docker build -t secretrulerkings/backend-app:${packageJSONVersion} .
-                                docker push secretrulerkings/backend-app:${packageJSONVersion}
+                                docker build -t secretrulerkings/backend-app .
+                                docker push secretrulerkings/backend-app
                             """
                         }
                     }
@@ -86,12 +84,10 @@ pipeline {
                 echo "Now we build frontend images and push to Docker Hub"
                 dir('webapp') {
                     script {
-                        def packageJSON = readJSON file: 'package.json'
-                        def packageJSONVersion = packageJSON.version
                         withDockerRegistry([credentialsId: 'dockerhub-cred', url: 'https://index.docker.io/v1/']) {
                             sh """
-                                docker build -t secretrulerkings/frontend-app:${packageJSONVersion} .
-                                docker push secretrulerkings/frontend-app:${packageJSONVersion}
+                                docker build -t secretrulerkings/frontend-app .
+                                docker push secretrulerkings/frontend-app
                             """
                         }
                     }
